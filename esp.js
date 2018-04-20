@@ -1,6 +1,8 @@
 const WIFI_NAME = "Struggles8";
 const WIFI_OPTIONS = { password : "DootDOotDOOtDOOT" };
 
+console.log = function(){};
+
 var arr = new Uint8ClampedArray(24 * 4);
 
 var curCol = {
@@ -13,7 +15,7 @@ var curCol = {
 var wifi = require("EspruinoWiFi");
 var neopixel = require("neopixel");
 
-function onInit(){
+E.on('init', function() {
   setColor({
     r: 50,
     g: 0,
@@ -30,8 +32,11 @@ function onInit(){
       onConnect(info);
     });
   });
-}
+});
 
+function identify(udp, idBuf){
+  udp.send(idBuf, 0, idBuf.length, 8000, '192.168.0.255');
+}
 
 
 function onConnect(ipv4){
@@ -47,7 +52,7 @@ function onConnect(ipv4){
     let identity = { ip: ipv4.ip, mac: ipv4.mac };
     let idBuf = JSON.stringify(identity);
 
-    udp.send(idBuf, 0, idBuf.length, 8000, '192.168.0.255');
+    identify(udp, idBuf);
 
     udp.on('message', function(msg){
       console.log(msg);
@@ -61,6 +66,8 @@ function onConnect(ipv4){
           g: green,
           b: blue
         });
+      } else if(msg == 'ping') {
+       identify(udp, idBuf);
       }
     });
 
@@ -72,7 +79,6 @@ function onConnect(ipv4){
   setColor(curCol);
 }
 
-
 function setColor(color){
   for (var i=0;i<arr.length;i+=3) {
     arr[i  ] = color.g;
@@ -81,5 +87,7 @@ function setColor(color){
   }
   neopixel.write(B5, arr);
 }
+
+
 
 save();
