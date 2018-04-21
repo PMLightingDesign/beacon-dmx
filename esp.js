@@ -6,10 +6,10 @@ console.log = function(){};
 var arr = new Uint8ClampedArray(24 * 4);
 
 var curCol = {
-      r: 0,
-      g: 0,
-      b: 0
-    };
+  r: 0,
+  g: 0,
+  b: 0
+};
 
 //Modules
 var wifi = require("EspruinoWiFi");
@@ -54,20 +54,20 @@ function onConnect(ipv4){
 
     identify(udp, idBuf);
 
+    setInterval(function(){
+      setColor(curCol);
+    }, 150);
+
     udp.on('message', function(msg){
       console.log(msg);
+      if(msg == 'ping'){
+        identify(udp, idBuf);
+      }
       let state = msg.split(',');
       if(state.length == 3){
-        let red = parseInt(state[0]);
-        let green = parseInt(state[1]);
-        let blue = parseInt(state[2]);
-        setColor({
-          r: red,
-          g: green,
-          b: blue
-        });
-      } else if(msg == 'ping') {
-       identify(udp, idBuf);
+        curCol.r = parseInt(state[0]);
+        curCol.g = parseInt(state[1]);
+        curCol.b = parseInt(state[2]);
       }
     });
 
@@ -87,7 +87,5 @@ function setColor(color){
   }
   neopixel.write(B5, arr);
 }
-
-
 
 save();
