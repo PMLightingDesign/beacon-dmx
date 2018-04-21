@@ -1,15 +1,17 @@
-const WIFI_NAME = "Struggles8";
-const WIFI_OPTIONS = { password : "DootDOotDOOtDOOT" };
+const WIFI_NAME = "Clear Story";
+const WIFI_OPTIONS = { password : "Rubber=Duck!" };
 
-console.log = function(){};
+//console.log = function(){};
 
-var arr = new Uint8ClampedArray(24 * 4);
+var arr = new Uint8ClampedArray(24 * 3);
 
 var curCol = {
-  r: 0,
+  r: 255,
   g: 0,
   b: 0
 };
+
+let write = 1;
 
 //Modules
 var wifi = require("EspruinoWiFi");
@@ -29,20 +31,25 @@ E.on('init', function() {
     console.log("Connected!");
     wifi.getIP(function(err, info){
       console.log(info.ip);
+      console.log(info.mac);
       onConnect(info);
     });
   });
 });
 
-function identify(udp, idBuf){
-  udp.send(idBuf, 0, idBuf.length, 8000, '192.168.0.255');
+let udp;
+let idBuf;
+
+function identify(){
+  udp.send(idBuf, 0, idBuf.length, 8000, '192.168.1.255');
 }
 
+let state;
 
 function onConnect(ipv4){
   const dgram = require('dgram');
 
-  let udp = dgram.createSocket('udp4');
+  udp = dgram.createSocket('udp4');
 
   udp.bind(8000, function(err){
     if(err){
@@ -50,26 +57,11 @@ function onConnect(ipv4){
     }
 
     let identity = { ip: ipv4.ip, mac: ipv4.mac };
-    let idBuf = JSON.stringify(identity);
+    idBuf = JSON.stringify(identity);
 
     identify(udp, idBuf);
 
-    setInterval(function(){
-      setColor(curCol);
-    }, 150);
-
-    udp.on('message', function(msg){
-      console.log(msg);
-      if(msg == 'ping'){
-        identify(udp, idBuf);
-      }
-      let state = msg.split(',');
-      if(state.length == 3){
-        curCol.r = parseInt(state[0]);
-        curCol.g = parseInt(state[1]);
-        curCol.b = parseInt(state[2]);
-      }
-    });
+    udp.on('message', process);
 
     udp.on('close', function(){
       setColor({ r: 30, g: 0, b: 0 });
@@ -79,13 +71,30 @@ function onConnect(ipv4){
   setColor(curCol);
 }
 
-function setColor(color){
-  for (var i=0;i<arr.length;i+=3) {
-    arr[i  ] = color.g;
-    arr[i+1] = color.r;
-    arr[i+2] = color.b;
+function process(msg){
+  if(msg == 'ping'){
+    identify();
   }
-  neopixel.write(B5, arr);
+  state = msg.split(',');
+  if(state.length == 3){
+    curCol.r = parseInt(state[0]);
+    curCol.g = parseInt(state[1]);
+    curCol.b = parseInt(state[2]);
+  }
+  setColor(curCol);
 }
 
-save();
+function setColor(color){
+  //'compiled';
+  if(write == 1){
+    write = 0;
+    for (var i=0;i<arr.length;i+=3) {
+      arr[i  ] = color.g;
+      arr[i+1] = color.r;
+      arr[i+2] = color.b;
+    }
+    neopixel.write(B5, arr);
+    write = 1;
+  }
+
+}
