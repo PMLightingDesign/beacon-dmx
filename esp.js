@@ -1,6 +1,3 @@
-const WIFI_NAME = "Clear Story";
-const WIFI_OPTIONS = { password : "Rubber=Duck!" };
-
 //console.log = function(){};
 
 var arr = new Uint8ClampedArray(24 * 3);
